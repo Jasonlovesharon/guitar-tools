@@ -22,9 +22,9 @@
   header{background:linear-gradient(135deg,#1c2740,#2b3a5c);color:#fff;padding:20px 18px 16px}
   header h1{margin:0;font-size:20px;letter-spacing:.5px}
   header p{margin:6px 0 0;font-size:12.5px;color:#a8b4cc}
-  .tabs{display:flex;gap:8px;max-width:920px;margin:12px auto 0;padding:0 16px}
-  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit;font-size:13.5px;font-weight:600;
-    border:0;border-radius:12px;padding:8px 6px;background:#e8ecf5;color:#5b6478;cursor:pointer;transition:.15s;line-height:1.2}
+  .tabs{display:flex;gap:6px;max-width:920px;margin:12px auto 0;padding:0 14px}
+  .tab{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;font-size:12.5px;font-weight:600;border:0;border-radius:12px;padding:7px 4px;background:#e8ecf5;color:#5b6478;cursor:pointer;transition:.15s;line-height:1.15}
+  .tab span{white-space:nowrap}
   .tab.active{background:var(--blue);color:#fff;box-shadow:0 3px 10px rgba(37,99,235,.28)}
   .tab .tag{margin:0;font-size:9.5px;padding:1px 7px}
   .tab.active .tag{background:rgba(255,255,255,.24);color:#fff}
@@ -127,6 +127,21 @@
   .wronglist{display:flex;flex-wrap:wrap;gap:8px;min-height:20px}
   .wrongchip{background:#fdecec;border:1px solid #f6c6c6;color:#b03030;border-radius:9px;padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer}
 
+  /* ---- 调音表 ---- */
+  .tuner-note{text-align:center;margin:10px 0 4px}
+  .tuner-note b{font-size:58px;font-weight:800;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+  .tuner-note small{display:block;font-size:13px;color:var(--grey);margin-top:6px}
+  .cents{position:relative;height:42px;margin:18px 6px 24px}
+  .cents .track{position:absolute;left:0;right:0;top:15px;height:12px;border-radius:6px;background:#eef1f7}
+  .cents .okzone{position:absolute;left:42%;width:16%;top:15px;height:12px;border-radius:6px;background:#d7f2e5}
+  .cents .center{position:absolute;left:50%;top:7px;width:2px;height:28px;background:#c7cfdd;transform:translateX(-1px)}
+  .cents .needle{position:absolute;top:5px;width:8px;height:32px;border-radius:4px;background:var(--blue);transform:translateX(-50%);transition:left .09s}
+  .cents .needle.ok{background:var(--green)}
+  .cents .needle.no{background:var(--red)}
+  .cents .sc{position:absolute;top:33px;font-size:10.5px;color:var(--grey)}
+  #tnStrings button{border:1.5px solid var(--line);background:#fff;min-width:96px}
+  #tnStrings button.on{border-color:var(--blue);background:var(--blue-l);color:var(--blue);font-weight:700}
+
   /* ---- 班次标签 ---- */
   .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px;margin-left:6px;vertical-align:middle;letter-spacing:.3px}
   .tag.beg{background:#e6f7f0;color:#0f9d6e}
@@ -146,6 +161,7 @@
 
 <div class="tabs">
   <button class="tab active" data-tab="metro"><span>🥁 节拍器</span></button>
+  <button class="tab" data-tab="tuner"><span>🎯 调音表</span></button>
   <button class="tab" data-tab="fret"><span>🎸 指板找音</span><span class="tag beg">初级班</span></button>
   <button class="tab" data-tab="ear"><span>🎧 听音找音</span><span class="tag adv">提高班</span></button>
 </div>
@@ -183,12 +199,13 @@
           <select id="metroVoice">
             <option value="click">节拍器 Click</option>
             <option value="beat">万能鼓点（动次打次）</option>
+            <option value="mech">机械节拍器（叮 哒 哒 哒）</option>
           </select>
         </label>
       </div>
       <div class="beats" id="beatDots"></div>
       <button class="primary bigplay" id="metroToggle">▶ 开始</button>
-      <div class="hint">第一拍为重音（红色）。手机建议外放或戴耳机。</div>
+      <div class="hint">第一拍为重音（红色）。手机建议外放或戴耳机。<br>已适配系统「静音模式」（苹果手机静音拨片拨下也能响）。</div>
     </div>
   </section>
 
@@ -279,6 +296,35 @@
     </div>
   </section>
 
+  <!-- ================= 调音表 ================= -->
+  <section id="tuner" hidden>
+    <div class="card">
+      <h2>🎯 调音表 <span class="hint" style="font-weight:400">（麦克风拾音 · 标准调弦 E A D G B E）</span></h2>
+      <div class="tuner-note">
+        <b id="tnNote">—</b>
+        <small id="tnFreq">点下面的按钮，对着手机弹一根弦</small>
+      </div>
+      <div class="cents">
+        <div class="track"></div>
+        <div class="okzone"></div>
+        <div class="center"></div>
+        <div class="needle" id="tnNeedle" style="left:50%"></div>
+        <div class="sc" style="left:0">−50 低</div>
+        <div class="sc" style="left:50%;transform:translateX(-50%)">准 0</div>
+        <div class="sc" style="right:0">+50 高</div>
+      </div>
+      <div class="result" id="tnStatus"></div>
+      <button class="primary bigplay" id="tnToggle">🎤 开始测音</button>
+      <div class="hint">需在 <b>https</b> 网址下使用（GitHub Pages 已是）；首次会弹麦克风授权。<br>安静环境、靠近手机、<b>一次只弹一根弦</b> 最准。</div>
+    </div>
+
+    <div class="card">
+      <h2>标准调弦参考（点一下听标准音）</h2>
+      <div class="btnrow" id="tnStrings"></div>
+      <div class="hint">把弦调到和参考音一样高即可；也可只看上面指针停在中间（绿色区间）。</div>
+    </div>
+  </section>
+
   <footer>
     数据全部在你手机浏览器本地处理，不上传服务器。<br>
     深圳市文化馆 · 电吉他实用工具　·　Powered by Jason
@@ -289,10 +335,33 @@
 /* =========================================================
    音频引擎（与「练耳训练」相同的钢琴音色）
    ========================================================= */
+// ===== 让声音在手机「静音拨片」下也能响 =====
+// 方案A（新版 Safari/Chrome）：AudioSession API → 设成 playback 即忽略静音开关
+// 方案B（老 iOS 没有该 API）：把声音改走 <audio> 元素（媒体播放不受拨片影响）
+function setLoudSession(type){
+  try{ if(navigator.audioSession){ navigator.audioSession.type = type || 'playback'; } }catch(e){}
+}
+let mediaSink = null;
+function isIOS(){
+  return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function needMediaRoute(){ return isIOS() && !navigator.audioSession; }
+function ensureMediaSink(){
+  if(mediaSink) return mediaSink;
+  const el = document.createElement('audio');
+  el.setAttribute('playsinline','');
+  el.style.display = 'none';
+  document.body.appendChild(el);
+  mediaSink = el;
+  return el;
+}
+
 let actx = null;
 function ac(){
   if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); }
   if(actx.state === 'suspended'){ actx.resume(); }
+  setLoudSession('playback');          // iOS：让 Web Audio 无视静音拨片
   return actx;
 }
 function midiFreq(m){ return 440*Math.pow(2,(m-69)/12); }
@@ -310,12 +379,28 @@ function out(){
   const c = ac();
   if(!masterNode){
     const comp = c.createDynamicsCompressor();
-    comp.threshold.value = -16; comp.knee.value = 24; comp.ratio.value = 4;
+    comp.threshold.value = -10; comp.knee.value = 20; comp.ratio.value = 5;
     comp.attack.value = 0.003; comp.release.value = 0.25;
     masterNode = c.createGain(); masterNode.gain.value = 1.0;
-    masterNode.connect(comp); comp.connect(c.destination);
+    masterNode.connect(comp);
+    if(needMediaRoute()){
+      const dest = c.createMediaStreamDestination();   // 老 iOS：经 <audio> 元素出声
+      comp.connect(dest);
+      const el = ensureMediaSink();
+      el.srcObject = dest.stream;
+      const pr = el.play(); if(pr && pr.catch) pr.catch(function(){});
+    }else{
+      comp.connect(c.destination);
+    }
   }
   return masterNode;
+}
+// 【节拍器专用输出总线】节拍器声音统一从这里走，增益更大 → 更响
+let metroBusNode = null;
+function metroOut(){
+  const c = ac();
+  if(!metroBusNode){ metroBusNode = c.createGain(); metroBusNode.gain.value = 1.9; metroBusNode.connect(out()); }
+  return metroBusNode;
 }
 const NOTE_GAIN = 1.6;
 function playNote(m, when=0, dur=0.95, vol=0.22){
@@ -342,6 +427,8 @@ document.querySelectorAll('.tab').forEach(b=>{
     document.getElementById('metro').hidden = (id!=='metro');
     document.getElementById('ear').hidden   = (id!=='ear');
     document.getElementById('fret').hidden  = (id!=='fret');
+    document.getElementById('tuner').hidden = (id!=='tuner');
+    if(id !== 'tuner') stopTuner();
   });
 });
 
@@ -357,12 +444,12 @@ function clickAt(time, accent){
   const o = c.createOscillator(); const g = c.createGain();
   o.type = 'sine';
   o.frequency.value = accent ? 1250 : 820;
-  const v = accent ? 1.1 : 0.6;
+  const v = accent ? 1.6 : 1.05;
   g.gain.setValueAtTime(0.0001, time);
   g.gain.linearRampToValueAtTime(v, time+0.002);
-  g.gain.exponentialRampToValueAtTime(0.0001, time+0.055);
-  o.connect(g); g.connect(out());
-  o.start(time); o.stop(time+0.08);
+  g.gain.exponentialRampToValueAtTime(0.0001, time+0.075);
+  o.connect(g); g.connect(metroOut());
+  o.start(time); o.stop(time+0.10);
 }
 function noiseBuf(dur){
   const c = ac();
@@ -379,9 +466,9 @@ function kickAt(t){
   o.frequency.setValueAtTime(155, t);
   o.frequency.exponentialRampToValueAtTime(45, t+0.12);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(1.3, t+0.005);
+  g.gain.linearRampToValueAtTime(1.7, t+0.005);
   g.gain.exponentialRampToValueAtTime(0.0001, t+0.28);
-  o.connect(g); g.connect(out());
+  o.connect(g); g.connect(metroOut());
   o.start(t); o.stop(t+0.32);
 }
 function snareAt(t){
@@ -390,16 +477,16 @@ function snareAt(t){
   const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(0.6, t+0.003);
+  g.gain.linearRampToValueAtTime(0.95, t+0.003);
   g.gain.exponentialRampToValueAtTime(0.0001, t+0.17);
-  src.connect(hp); hp.connect(g); g.connect(out());
+  src.connect(hp); hp.connect(g); g.connect(metroOut());
   src.start(t); src.stop(t+0.2);
   const o = c.createOscillator(); const g2 = c.createGain();
   o.type = 'triangle'; o.frequency.value = 190;
   g2.gain.setValueAtTime(0.0001, t);
-  g2.gain.linearRampToValueAtTime(0.35, t+0.004);
+  g2.gain.linearRampToValueAtTime(0.55, t+0.004);
   g2.gain.exponentialRampToValueAtTime(0.0001, t+0.11);
-  o.connect(g2); g2.connect(out());
+  o.connect(g2); g2.connect(metroOut());
   o.start(t); o.stop(t+0.14);
 }
 function hatAt(t){
@@ -408,10 +495,41 @@ function hatAt(t){
   const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000;
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(0.3, t+0.001);
+  g.gain.linearRampToValueAtTime(0.55, t+0.001);
   g.gain.exponentialRampToValueAtTime(0.0001, t+0.045);
-  src.connect(hp); hp.connect(g); g.connect(out());
+  src.connect(hp); hp.connect(g); g.connect(metroOut());
   src.start(t); src.stop(t+0.06);
+}
+// 【音色③ 机械节拍器】叮(重音,高亮) / 哒(弱拍)，再加一记极短噪声模拟机械"咔嗒"
+function mechAt(t, accent){
+  const c = ac();
+  const f = accent ? 2050 : 1280;              // 叮 高 / 哒 低
+  const v = accent ? 1.25 : 0.95;
+  const dur = accent ? 0.17 : 0.10;
+  const o = c.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(f, t);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(v, t+0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(metroOut());
+  o.start(t); o.stop(t+dur+0.06);
+  const o2 = c.createOscillator(); o2.type = 'sine';   // 金属泛音 → 更亮
+  o2.frequency.setValueAtTime(f*2.76, t);
+  const g2 = c.createGain();
+  g2.gain.setValueAtTime(0.0001, t);
+  g2.gain.linearRampToValueAtTime(v*0.55, t+0.001);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t+dur*0.6);
+  o2.connect(g2); g2.connect(metroOut());
+  o2.start(t); o2.stop(t+dur+0.06);
+  const src = c.createBufferSource(); src.buffer = noiseBuf(0.012);
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 4000;
+  const gn = c.createGain();
+  gn.gain.setValueAtTime(0.0001, t);
+  gn.gain.linearRampToValueAtTime(accent ? 0.42 : 0.32, t+0.001);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t+0.02);
+  src.connect(hp); hp.connect(gn); gn.connect(metroOut());
+  src.start(t); src.stop(t+0.03);
 }
 document.getElementById('metroVoice').addEventListener('change', function(e){ metroVoice = e.target.value; });
 
@@ -439,6 +557,8 @@ function scheduler(){
       if(beat % 2 === 0) kickAt(metro.next); else snareAt(metro.next);
       hatAt(metro.next);
       hatAt(metro.next + (60/metro.bpm)/2);
+    } else if(metroVoice === 'mech'){
+      mechAt(metro.next, beat===0);
     } else {
       clickAt(metro.next, beat===0);
     }
@@ -1003,6 +1123,155 @@ buildTuneSelect();
 buildStringSelect();
 buildNeck();
 fbSetMode('learn');
+
+/* =========================================================
+   调音表（麦克风拾音 → 音高检测）
+   ========================================================= */
+const TNOTE = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const TSTRINGS = [
+  {label:'6弦 E', midi:40, f:82.41},
+  {label:'5弦 A', midi:45, f:110.00},
+  {label:'4弦 D', midi:50, f:146.83},
+  {label:'3弦 G', midi:55, f:196.00},
+  {label:'2弦 B', midi:59, f:246.94},
+  {label:'1弦 E', midi:64, f:329.63}
+];
+const tuner = { on:false, stream:null, src:null, ana:null, buf:null, raf:null, last:0 };
+
+// 由频率算出最近的音名 + 偏离多少音分（cents）
+function freqInfo(f){
+  const midi = 69 + 12*Math.log2(f/440);
+  const near = Math.round(midi);
+  const cents = Math.round((midi - near)*100);
+  const name = TNOTE[((near%12)+12)%12] + (Math.floor(near/12)-1);
+  return { name:name, cents:cents, midi:near };
+}
+
+// 自相关法：从一段波形里找基频（吉他大概 70–1100Hz）
+function autoCorrelate(buf, sr){
+  const SIZE = buf.length;
+  let rms = 0;
+  for(let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+  rms = Math.sqrt(rms/SIZE);
+  if(rms < 0.008) return -1;                 // 太安静，先不判定
+  const thres = 0.2;
+  let r1=0, r2=SIZE-1;
+  for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
+  for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
+  const b = buf.slice(r1, r2), n = b.length;
+  const minLag = Math.floor(sr/1100), maxLag = Math.min(n-1, Math.ceil(sr/70));
+  const corr = new Float32Array(maxLag+2);
+  let be = 0;
+  for(let lag=minLag; lag<=maxLag; lag++){
+    let sum=0;
+    for(let i=0;i<n-lag;i++) sum += b[i]*b[i+lag];
+    corr[lag] = sum;
+    if(sum > be) be = sum;
+  }
+  let d = minLag;                             // 找第一个峰
+  while(d < maxLag && corr[d] < corr[d+1]) d++;
+  let maxv=-1, maxp=d;
+  for(let lag=d; lag<=maxLag; lag++){ if(corr[lag] > maxv){ maxv=corr[lag]; maxp=lag; } }
+  if(maxp <= minLag || maxp >= maxLag) return -1;
+  const x1=corr[maxp-1], x2=corr[maxp], x3=corr[maxp+1];   // 抛物线插值，精度更高
+  const a=(x1+x3-2*x2)/2, bb=(x3-x1)/2;
+  const T0 = (a!==0) ? (maxp - bb/(2*a)) : maxp;
+  if(T0 <= 0) return -1;
+  let en=0; for(let i=0;i<n;i++) en += b[i]*b[i];          // 峰值太低 = 噪声
+  if(be < 0.28*en) return -1;
+  return sr/T0;
+}
+
+function renderTuner(f){
+  const noteEl=document.getElementById('tnNote'), freqEl=document.getElementById('tnFreq');
+  const needle=document.getElementById('tnNeedle'), status=document.getElementById('tnStatus');
+  if(!(f > 0)){ freqEl.textContent = '聆听中…（一次只弹一根弦）'; return; }
+  const info = freqInfo(f);
+  noteEl.textContent = info.name;
+  freqEl.textContent = f.toFixed(1) + ' Hz';
+  const c = Math.max(-50, Math.min(50, info.cents));
+  needle.style.left = (c + 50) + '%';
+  const ok = Math.abs(info.cents) <= 5;
+  needle.className = 'needle ' + (ok ? 'ok' : 'no');
+  status.className = 'result ' + (ok ? 'ok' : 'no');
+  status.textContent = ok ? '✅ 准了！' :
+      (info.cents < 0 ? ('偏低 ' + info.cents + ' 音分 → 弦拧紧一点')
+                      : ('偏高 +' + info.cents + ' 音分 → 弦放松一点'));
+  let best=-1, bd=999;                        // 高亮最接近的标准弦
+  TSTRINGS.forEach(function(s,i){ const d=Math.abs(1200*Math.log2(f/s.f)); if(d<bd){ bd=d; best=i; } });
+  document.querySelectorAll('#tnStrings button').forEach(function(b,i){
+    b.classList.toggle('on', i===best && bd<80);
+  });
+}
+
+function loopTuner(){
+  if(!tuner.on) return;
+  tuner.raf = requestAnimationFrame(loopTuner);
+  const now = performance.now();
+  if(now - tuner.last < 60) return;           // 约每秒判定 16 次，省电
+  tuner.last = now;
+  tuner.ana.getFloatTimeDomainData(tuner.buf);
+  renderTuner(autoCorrelate(tuner.buf, ac().sampleRate));
+}
+
+function startTuner(){
+  setLoudSession('play-and-record');   // 要开麦克风，需换成"播放+录音"（同样无视静音拨片）
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    const s=document.getElementById('tnStatus'); s.className='result no';
+    s.textContent='⚠️ 当前环境不支持麦克风（请用 https 网址打开，例如 GitHub Pages）';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}})
+  .then(function(stream){
+    const c = ac();
+    tuner.stream = stream;
+    tuner.src = c.createMediaStreamSource(stream);
+    tuner.ana = c.createAnalyser();
+    tuner.ana.fftSize = 2048;
+    tuner.buf = new Float32Array(tuner.ana.fftSize);
+    tuner.src.connect(tuner.ana);
+    tuner.on = true; tuner.last = 0;
+    const btn=document.getElementById('tnToggle'); btn.textContent='■ 停止'; btn.classList.add('on');
+    document.getElementById('tnStatus').textContent='';
+    loopTuner();
+  })
+  .catch(function(e){
+    const s=document.getElementById('tnStatus'); s.className='result no';
+    s.textContent = '⚠️ 麦克风开不了：' + (e && e.name==='NotAllowedError'
+      ? '权限被拒绝，请在浏览器设置里允许麦克风' : (e && e.message ? e.message : e));
+  });
+}
+
+function stopTuner(){
+  tuner.on = false;
+  if(tuner.raf){ cancelAnimationFrame(tuner.raf); tuner.raf=null; }
+  if(tuner.src){ try{ tuner.src.disconnect(); }catch(e){} tuner.src=null; }
+  if(tuner.stream){ tuner.stream.getTracks().forEach(function(t){ t.stop(); }); tuner.stream=null; }
+  tuner.ana = null;
+  const btn=document.getElementById('tnToggle');
+  if(btn){ btn.textContent='🎤 开始测音'; btn.classList.remove('on'); }
+  const nd=document.getElementById('tnNeedle'); if(nd){ nd.style.left='50%'; nd.className='needle'; }
+  const s=document.getElementById('tnStatus'); if(s){ s.textContent=''; s.className='result'; }
+  setLoudSession('playback');          // 关麦后切回普通播放
+}
+
+document.getElementById('tnToggle').addEventListener('click', function(){
+  tuner.on ? stopTuner() : startTuner();
+});
+(function(){
+  const wrap = document.getElementById('tnStrings');
+  TSTRINGS.forEach(function(s){
+    const b = document.createElement('button');
+    b.textContent = s.label;
+    b.addEventListener('click', function(){ playNote(s.midi, 0, 1.3, 0.26); });
+    wrap.appendChild(b);
+  });
+})();
+document.addEventListener('pointerdown', function(){
+  if(mediaSink && mediaSink.paused){ const pr = mediaSink.play(); if(pr && pr.catch) pr.catch(function(){}); }
+});
+window.addEventListener('beforeunload', function(){ if(tuner.on) stopTuner(); });
+
 </script>
 </body>
 </html>
