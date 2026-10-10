@@ -131,7 +131,9 @@
   .tuner-note{text-align:center;margin:10px 0 4px}
   .tuner-note b{font-size:58px;font-weight:800;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
   .tuner-note small{display:block;font-size:13px;color:var(--grey);margin-top:6px}
-  .cents{position:relative;height:42px;margin:18px 6px 24px}
+  .tuner-lvl{height:6px;border-radius:3px;background:#eef1f7;margin:12px 6px 0;overflow:hidden}
+  .tuner-lvl i{display:block;height:100%;width:0%;background:var(--green);transition:width .08s}
+  .cents{position:relative;height:42px;margin:14px 6px 24px}
   .cents .track{position:absolute;left:0;right:0;top:15px;height:12px;border-radius:6px;background:#eef1f7}
   .cents .okzone{position:absolute;left:42%;width:16%;top:15px;height:12px;border-radius:6px;background:#d7f2e5}
   .cents .center{position:absolute;left:50%;top:7px;width:2px;height:28px;background:#c7cfdd;transform:translateX(-1px)}
@@ -304,6 +306,7 @@
         <b id="tnNote">—</b>
         <small id="tnFreq">点下面的按钮，对着手机弹一根弦</small>
       </div>
+      <div class="tuner-lvl"><i id="tnLevel"></i></div>
       <div class="cents">
         <div class="track"></div>
         <div class="okzone"></div>
@@ -1136,7 +1139,8 @@ const TSTRINGS = [
   {label:'2弦 B', midi:59, f:246.94},
   {label:'1弦 E', midi:64, f:329.63}
 ];
-const tuner = { on:false, stream:null, src:null, ana:null, buf:null, raf:null, last:0 };
+const tuner = { on:false, stream:null, src:null, ana:null, buf:null, raf:null, last:0, smooth:0, lastOk:0 };
+const tunerView = new Float32Array(8192), tunerNsdf = new Float32Array(8192);
 
 // 由频率算出最近的音名 + 偏离多少音分（cents）
 function freqInfo(f){
@@ -1147,45 +1151,73 @@ function freqInfo(f){
   return { name:name, cents:cents, midi:near };
 }
 
-// 自相关法：从一段波形里找基频（吉他大概 70–1100Hz）
+// ★ 基频检测：归一化自相关（NSDF / McLeod 法）—— 比普通自相关稳得多，
+//   低音弦不易判错八度，弱信号也能测出来
+//   返回 {f:频率Hz(测不到为-1), clarity:清晰度0~1, rms:音量}
 function autoCorrelate(buf, sr){
-  const SIZE = buf.length;
+  const N = buf.length;
+  let mean = 0;
+  for(let i=0;i<N;i++) mean += buf[i];
+  mean /= N;                                  // 先去掉直流分量
+  const x = tunerView;
   let rms = 0;
-  for(let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
-  rms = Math.sqrt(rms/SIZE);
-  if(rms < 0.008) return -1;                 // 太安静，先不判定
-  const thres = 0.2;
-  let r1=0, r2=SIZE-1;
-  for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
-  for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
-  const b = buf.slice(r1, r2), n = b.length;
-  const minLag = Math.floor(sr/1100), maxLag = Math.min(n-1, Math.ceil(sr/70));
-  const corr = new Float32Array(maxLag+2);
-  let be = 0;
+  for(let i=0;i<N;i++){ const v = buf[i]-mean; x[i]=v; rms += v*v; }
+  rms = Math.sqrt(rms/N);
+  const res = { f:-1, clarity:0, rms:rms };
+  if(rms < 0.004) return res;                 // 太安静
+  const minLag = Math.floor(sr/1100), maxLag = Math.min(N-2, Math.ceil(sr/70));
+  const nsdf = tunerNsdf;
+  let gmax = 0;
   for(let lag=minLag; lag<=maxLag; lag++){
-    let sum=0;
-    for(let i=0;i<n-lag;i++) sum += b[i]*b[i+lag];
-    corr[lag] = sum;
-    if(sum > be) be = sum;
+    let ac=0, m=0;
+    for(let i=0;i<N-lag;i++){ const a=x[i], b=x[i+lag]; ac += a*b; m += a*a + b*b; }
+    const v = m>0 ? 2*ac/m : 0;
+    nsdf[lag] = v;
+    if(v > gmax) gmax = v;
   }
-  let d = minLag;                             // 找第一个峰
-  while(d < maxLag && corr[d] < corr[d+1]) d++;
-  let maxv=-1, maxp=d;
-  for(let lag=d; lag<=maxLag; lag++){ if(corr[lag] > maxv){ maxv=corr[lag]; maxp=lag; } }
-  if(maxp <= minLag || maxp >= maxLag) return -1;
-  const x1=corr[maxp-1], x2=corr[maxp], x3=corr[maxp+1];   // 抛物线插值，精度更高
-  const a=(x1+x3-2*x2)/2, bb=(x3-x1)/2;
-  const T0 = (a!==0) ? (maxp - bb/(2*a)) : maxp;
-  if(T0 <= 0) return -1;
-  let en=0; for(let i=0;i<n;i++) en += b[i]*b[i];          // 峰值太低 = 噪声
-  if(be < 0.28*en) return -1;
-  return sr/T0;
+  res.clarity = gmax;
+  if(gmax < 0.45) return res;                 // 不够"像周期信号"，不报数
+  const thr = gmax*0.85;                      // 取第一个够高的峰（=基频，避免八度错）
+  let lag = minLag;
+  while(lag < maxLag && nsdf[lag] < 0) lag++;
+  for(; lag < maxLag; lag++){
+    if(nsdf[lag] >= thr && nsdf[lag] > nsdf[lag-1] && nsdf[lag] >= nsdf[lag+1]){
+      const y1=nsdf[lag-1], y2=nsdf[lag], y3=nsdf[lag+1];
+      const a=(y1+y3-2*y2)/2, b=(y3-y1)/2;
+      const T = (a!==0) ? (lag - b/(2*a)) : lag;   // 抛物线插值，更精确
+      if(T > 0){ res.f = sr/T; res.clarity = y2; }
+      return res;
+    }
+  }
+  return res;
 }
 
-function renderTuner(f){
+function renderTuner(res){
   const noteEl=document.getElementById('tnNote'), freqEl=document.getElementById('tnFreq');
   const needle=document.getElementById('tnNeedle'), status=document.getElementById('tnStatus');
-  if(!(f > 0)){ freqEl.textContent = '聆听中…（一次只弹一根弦）'; return; }
+  const lvl=document.getElementById('tnLevel');
+  if(lvl) lvl.style.width = Math.min(100, Math.round(res.rms/0.06*100)) + '%';   // 信号强度条
+  const now = performance.now();
+  let f = res.f;
+  if(f > 0 && res.clarity >= 0.5){
+    if(tuner.smooth > 0){
+      const d = 1200*Math.log2(f/tuner.smooth);       // 与上次的差距(音分)
+      if(Math.abs(d) > 250){ tuner.smooth = f; }       // 跳变太大=换弦了，直接采纳
+      else { tuner.smooth = tuner.smooth * Math.pow(2, (d*0.4)/1200); }   // 轻度平滑去抖
+      f = tuner.smooth;
+    } else { tuner.smooth = f; }
+    tuner.lastOk = now;
+  } else {
+    if(now - tuner.lastOk > 500){                      // 超过 0.5 秒都没测到，才清屏
+      noteEl.textContent = '—';
+      freqEl.textContent = res.rms > 0.02 ? '有声音，但还不够准…再弹一下' : '聆听中…（一次只弹一根弦）';
+      needle.style.left = '50%'; needle.className = 'needle';
+      status.className = 'result'; status.textContent = '';
+      return;
+    }
+    f = tuner.smooth;                                   // 短暂丢帧：沿用上次的值，别闪
+  }
+  if(!(f > 0)) return;
   const info = freqInfo(f);
   noteEl.textContent = info.name;
   freqEl.textContent = f.toFixed(1) + ' Hz';
@@ -1208,8 +1240,9 @@ function loopTuner(){
   if(!tuner.on) return;
   tuner.raf = requestAnimationFrame(loopTuner);
   const now = performance.now();
-  if(now - tuner.last < 60) return;           // 约每秒判定 16 次，省电
+  if(now - tuner.last < 40) return;           // 约每秒判定 25 次，跟手
   tuner.last = now;
+  if(!tuner.ana || !tuner.buf) return;
   tuner.ana.getFloatTimeDomainData(tuner.buf);
   renderTuner(autoCorrelate(tuner.buf, ac().sampleRate));
 }
@@ -1221,7 +1254,7 @@ function startTuner(){
     s.textContent='⚠️ 当前环境不支持麦克风（请用 https 网址打开，例如 GitHub Pages）';
     return;
   }
-  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}})
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:true}})
   .then(function(stream){
     const c = ac();
     tuner.stream = stream;
@@ -1230,7 +1263,7 @@ function startTuner(){
     tuner.ana.fftSize = 2048;
     tuner.buf = new Float32Array(tuner.ana.fftSize);
     tuner.src.connect(tuner.ana);
-    tuner.on = true; tuner.last = 0;
+    tuner.on = true; tuner.last = 0; tuner.smooth = 0; tuner.lastOk = 0;
     const btn=document.getElementById('tnToggle'); btn.textContent='■ 停止'; btn.classList.add('on');
     document.getElementById('tnStatus').textContent='';
     loopTuner();
@@ -1247,7 +1280,7 @@ function stopTuner(){
   if(tuner.raf){ cancelAnimationFrame(tuner.raf); tuner.raf=null; }
   if(tuner.src){ try{ tuner.src.disconnect(); }catch(e){} tuner.src=null; }
   if(tuner.stream){ tuner.stream.getTracks().forEach(function(t){ t.stop(); }); tuner.stream=null; }
-  tuner.ana = null;
+  tuner.ana = null; tuner.smooth = 0;
   const btn=document.getElementById('tnToggle');
   if(btn){ btn.textContent='🎤 开始测音'; btn.classList.remove('on'); }
   const nd=document.getElementById('tnNeedle'); if(nd){ nd.style.left='50%'; nd.className='needle'; }
