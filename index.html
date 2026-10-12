@@ -49,7 +49,8 @@
     font-variant-numeric:tabular-nums;letter-spacing:-1px}
   .bpmnum small{font-size:16px;color:var(--grey);font-weight:500;margin-left:4px}
   .round{width:52px;height:52px;border-radius:50%;font-size:26px;line-height:1;padding:0;
-    background:#eef1f7;font-weight:600;flex:none}
+    background:#eef1f7;font-weight:600;flex:none;touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   input[type=range]{width:100%;margin:14px 0 4px;accent-color:var(--blue)}
   .beats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0 4px;min-height:44px}
   .beat{width:34px;height:34px;border-radius:50%;background:#e8ecf5;color:#9aa5b8;font-weight:700;
@@ -676,8 +677,37 @@ document.getElementById('metroToggle').addEventListener('click', ()=>{
 document.getElementById('bpmRange').addEventListener('input', e=>{
   setBpm(+e.target.value);
 });
-document.getElementById('bpmDown').addEventListener('click', ()=> setBpm(metro.bpm-5));
-document.getElementById('bpmUp').addEventListener('click', ()=> setBpm(metro.bpm+5));
+// −/＋：点一下 ±1；按住不放则连续加减（间隔逐渐加快）
+function holdRepeat(btn, stepFn){
+  let t1 = null, t2 = null;
+  function stop(){
+    if(t1){ clearTimeout(t1); t1 = null; }
+    if(t2){ clearTimeout(t2); t2 = null; }
+  }
+  function fire(){ stepFn(); }
+  function start(e){
+    if(e) e.preventDefault();
+    stop();
+    fire();                                   // 立刻变 1
+    t1 = setTimeout(function(){               // 按住 0.35 秒后开始连发
+      let gap = 70;
+      (function loop(){
+        fire();
+        gap = Math.max(22, gap - 7);          // 越来越快
+        t2 = setTimeout(loop, gap);
+      })();
+    }, 350);
+  }
+  btn.addEventListener('pointerdown', function(e){
+    try{ btn.setPointerCapture(e.pointerId); }catch(_){}
+    start(e);
+  });
+  ['pointerup','pointercancel'].forEach(function(ev){ btn.addEventListener(ev, stop); });
+  window.addEventListener('pointerup', stop);
+  window.addEventListener('blur', stop);
+}
+holdRepeat(document.getElementById('bpmDown'), function(){ setBpm(metro.bpm - 1); });
+holdRepeat(document.getElementById('bpmUp'),   function(){ setBpm(metro.bpm + 1); });
 document.querySelectorAll('[data-bpm]').forEach(b=>{
   b.addEventListener('click', ()=> setBpm(+b.dataset.bpm));
 });
