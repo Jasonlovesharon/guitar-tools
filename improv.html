@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="即兴练习">
+<meta name="theme-color" content="#1c2740">
+<title>即兴 20 分钟 · 电吉他跟练</title>
+<style>
+  :root{
+    --navy:#1c2740; --navy2:#2b3a5c; --blue:#2563eb; --green:#109669;
+    --orange:#ea820f; --purple:#7e3ac8; --red:#d64545;
+    --ink:#111827; --grey:#6b7280; --line:#e7ebf3; --bg:#eef1f7;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:30px;
+    -webkit-text-size-adjust:100%;
+  }
+  main{max-width:560px;margin:0 auto;padding:0 12px}
+
+  /* ---------- header ---------- */
+  header{background:linear-gradient(135deg,#1c2740,#2b3a5c);color:#fff;padding:16px 18px 14px}
+  header h1{margin:0;font-size:20px;letter-spacing:.4px;font-weight:800}
+  header p{margin:5px 0 0;font-size:12.5px;color:#a8b4cc}
+
+  /* ---------- card ---------- */
+  .card{background:#fff;border-radius:16px;padding:16px;margin-top:12px;
+        box-shadow:0 2px 10px rgba(23,38,71,.06)}
+  .card h2{margin:0 0 12px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px}
+  .hint{font-size:11.5px;color:var(--grey);font-weight:400}
+
+  /* ---------- 计时 ---------- */
+  .timer-wrap{display:flex;align-items:center;gap:16px}
+  .ringbox{position:relative;width:118px;height:118px;flex:none}
+  .ring{width:118px;height:118px;transform:rotate(-90deg)}
+  .ring .track{fill:none;stroke:#eef1f7;stroke-width:10}
+  .ring .bar{fill:none;stroke:var(--blue);stroke-width:10;stroke-linecap:round;
+             stroke-dasharray:339.29;stroke-dashoffset:339.29;transition:stroke .3s}
+  .ring-txt{position:absolute;inset:0;display:flex;flex-direction:column;
+            align-items:center;justify-content:center}
+  .ring-txt b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .ring-txt span{font-size:10.5px;color:var(--grey);margin-top:2px}
+
+  .phasebox{flex:1;min-width:0}
+  .phase-tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;
+             border-radius:20px;background:#e8effd;color:var(--blue)}
+  .phase-name{font-size:17px;font-weight:800;margin:7px 0 4px;line-height:1.25}
+  .phase-left{font-size:12px;color:var(--grey)}
+
+  .steps{display:flex;gap:6px;margin-top:14px}
+  .steps i{flex:1;height:5px;border-radius:3px;background:#eef1f7;transition:.3s}
+  .steps i.on{background:var(--blue)}
+  .steps i.done{background:#b9c8e4}
+
+  .btnrow{display:flex;gap:8px;margin-top:14px}
+  button{font-family:inherit;cursor:pointer;border:none;font-weight:700;
+         -webkit-user-select:none;user-select:none;touch-action:manipulation}
+  .btn{flex:1;padding:12px 10px;border-radius:12px;font-size:14.5px;
+       background:#eef1f7;color:#3b4a66;transition:.15s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.28)}
+  .btn.primary.on{background:var(--red);box-shadow:0 4px 12px rgba(214,69,69,.28)}
+  .btn.small{flex:none;padding:9px 14px;font-size:13px;border-radius:10px}
+  .btn:disabled{opacity:.45}
+
+  /* ---------- 提示 ---------- */
+  .tip{background:#f7f9fd;border-left:4px solid var(--orange);border-radius:10px;
+       padding:11px 13px;font-size:13px;line-height:1.62;color:#374151}
+  .tip b{color:var(--orange)}
+
+  /* ---------- 伴奏 ---------- */
+  .row{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .row:last-child{margin-bottom:0}
+  .row label{font-size:13px;color:#4b5563;flex:none;min-width:52px;font-weight:600}
+  input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;
+    background:#e2e8f5;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;
+    border-radius:50%;background:#fff;border:3px solid var(--blue);
+    box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer}
+  .val{font-size:13px;font-weight:800;min-width:52px;text-align:right;
+       font-variant-numeric:tabular-nums;color:var(--blue)}
+  select{flex:1;font-family:inherit;font-size:13.5px;padding:8px 10px;border-radius:10px;
+         border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:600}
+  .chord-now{text-align:center;margin-top:12px;min-height:54px}
+  .chord-now b{display:block;font-size:29px;font-weight:800;color:var(--purple);
+               line-height:1.12;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .chord-now span{display:block;font-size:12.5px;color:var(--grey);margin-top:3px;font-weight:600}
+  .prog-deg{font-size:12.5px;color:#4b5563;margin:0 0 11px 62px;font-weight:700;line-height:1.5}
+  .prog-deg em{color:var(--purple);font-style:normal;font-size:13.5px;font-weight:800}
+  .prog-deg i{color:#9aa5b8;font-style:normal;font-weight:600}
+
+  .switches{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .sw{flex:1 1 30%;padding:9px 6px;border-radius:10px;background:#eef1f7;color:#5b6478;
+      font-size:12.5px;font-weight:700;text-align:center;transition:.15s;min-width:88px}
+  .sw.on{background:var(--green);color:#fff}
+
+  /* ---------- 录音 ---------- */
+  .rec-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .rec-item{display:flex;align-items:center;gap:10px;background:#f7f9fd;
+            border-radius:12px;padding:9px 12px}
+  .rec-item .t{font-size:12.5px;font-weight:700;color:#3b4a66;flex:none;min-width:44px}
+  .rec-item audio{flex:1;height:32px;min-width:0}
+  .rec-item .x{flex:none;width:26px;height:26px;border-radius:50%;background:#e8ecf4;
+               color:#8b95a8;font-size:14px;line-height:26px;text-align:center}
+  .empty{font-size:12.5px;color:#9aa5b8;text-align:center;padding:8px 0}
+
+  footer{text-align:center;color:#9aa5b8;font-size:11.5px;padding:16px 16px 0;line-height:1.7}
+  .warn{background:#fdf2f2;border-left:4px solid var(--red);border-radius:10px;
+        padding:10px 13px;font-size:12.5px;color:#9b2c2c;line-height:1.6;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>即兴 20 分钟</h1>
+  <p>动机 → 3 音 → 自由即兴 → 回听自评</p>
+</header>
+
+<main>
+
+  <!-- ============ 计时 ============ -->
+  <div class="card">
+    <div class="timer-wrap">
+      <div class="ringbox">
+        <svg class="ring" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="54"></circle>
+          <circle class="bar" id="ringBar" cx="60" cy="60" r="54"></circle>
+        </svg>
+        <div class="ring-txt">
+          <b id="tBig">20:00</b>
+          <span>剩余</span>
+        </div>
+      </div>
+      <div class="phasebox">
+        <span class="phase-tag" id="pTag">第 1 / 4 段</span>
+        <div class="phase-name" id="pName">动机变奏</div>
+        <div class="phase-left" id="pLeft">本段 5 分钟</div>
+      </div>
+    </div>
+
+    <div class="steps" id="steps"></div>
+
+    <div class="btnrow">
+      <button class="btn primary" id="btnRun">▶ 开始</button>
+      <button class="btn small" id="btnSkip">跳过本段</button>
+      <button class="btn small" id="btnReset">重置</button>
+    </div>
+  </div>
+
+  <!-- ============ 当前阶段提示 ============ -->
+  <div class="card">
+    <h2>现在做这个 <span class="hint" id="tipPhase">第 1 段</span></h2>
+    <div class="tip" id="tipBox"></div>
+  </div>
+
+  <!-- ============ 伴奏 ============ -->
+  <div class="card">
+    <h2>伴奏 <span class="hint">（手机外放也能听见）</span></h2>
+
+    <div class="row">
+      <label>和弦</label>
+      <select id="prog">
+        <option value="0">Am – F – C – G（小调流行）</option>
+        <option value="1">A 蓝调 12 小节（A7 D7 E7）</option>
+        <option value="2">只有鼓（不弹和弦）</option>
+      </select>
+    </div>
+    <p class="prog-deg" id="progDeg"></p>
+
+    <div class="row">
+      <label>速度</label>
+      <input type="range" id="bpm" min="50" max="160" value="80" step="5">
+      <span class="val" id="bpmV">80</span>
+    </div>
+
+    <div class="row">
+      <label>音量</label>
+      <input type="range" id="vol" min="0" max="100" value="65">
+      <span class="val" id="volV">65%</span>
+    </div>
+
+    <div class="switches">
+      <div class="sw on" id="swDrum">🥁 鼓</div>
+      <div class="sw on" id="swBass">🎸 贝斯</div>
+      <div class="sw on" id="swPad">🎹 和声</div>
+    </div>
+
+    <button class="btn primary" id="btnTrack" style="margin-top:12px;width:100%">▶ 播放伴奏</button>
+    <div class="chord-now" id="chordNow">
+      <b id="cnDeg">—</b>
+      <span id="cnSub"></span>
+    </div>
+  </div>
+
+  <!-- ============ 录音 ============ -->
+  <div class="card">
+    <h2>录音 <span class="hint">（第 3 段用）</span></h2>
+    <button class="btn primary" id="btnRec" style="width:100%">● 开始录音</button>
+    <div class="warn" id="recWarn" hidden></div>
+    <div class="rec-list" id="recList">
+      <div class="empty">还没有录音</div>
+    </div>
+  </div>
+
+  <footer>
+    数据全部在你的手机浏览器里处理，不上传服务器。<br>
+    即兴 20 分钟　·　Powered by Jason
+  </footer>
+</main>
+
+<script>
+/* ==========================================================
+   即兴 20 分钟 —— 单文件跟练页
+   ① 音频时钟调度（不漂移）
+   ② Web Audio 合成伴奏（无外部文件、可离线）
+   ③ MediaRecorder 录音回放
+   ========================================================== */
+
+/* ---------- 音频上下文 ---------- */
+let AC_ = null;
+function ac(){
+  if(!AC_){
+    AC_ = new (window.AudioContext || window.webkitAudioContext)();
+    // iOS 静音拨片适配：让 Web Audio 走 playback 通道
+    if(navigator.audioSession){ try{ navigator.audioSession.type = 'playback'; }catch(e){} }
+    // 主输出链路：master -> 压缩 -> destination
+    const comp = AC_.createDynamicsCompressor();
+    comp.threshold.value = -8; comp.knee.value = 6; comp.ratio.value = 3;
+    comp.attack.value = 0.004; comp.release.value = 0.2;
+    comp.connect(AC_.destination);
+    AC_.master = comp;
+  }
+  if(AC_.state === 'suspended') AC_.resume();
+  return AC_;
+}
+
+/* ---------- 音高工具 ---------- */
+const NOTEI = {C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+function m(name, oct){ return NOTEI[name] + (oct + 1) * 12; }
+function hz(midi){ return 440 * Math.pow(2, (midi - 69) / 12); }
+
+/* ---------- 和弦进行 ---------- */
+/* 级数以「本调主音 = 1」标注：
+   小调进行 → Am 就是 1 级（不是关系大调里的 6 级）
+   pad: 三/四个音；bass: 低音；deg: 首调级数；rom: 罗马数字；name: 和弦名 */
+const PROGS = [
+  [ // 0  Am – F – C – G　以 Am 为主音：1 – ♭6 – ♭3 – ♭7
+    {name:'Am', deg:'1',  rom:'i',   bass:m('A',2), pad:[m('A',3),m('C',4),m('E',4)]},
+    {name:'F',  deg:'♭6', rom:'VI',  bass:m('F',2), pad:[m('F',3),m('A',3),m('C',4)]},
+    {name:'C',  deg:'♭3', rom:'III', bass:m('C',3), pad:[m('C',4),m('E',4),m('G',4)]},
+    {name:'G',  deg:'♭7', rom:'VII', bass:m('G',2), pad:[m('G',3),m('B',3),m('D',4)]}
+  ],
+  [ // 1  A 蓝调 12 小节　以 A 为主音：1 – 4 – 5
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'D7', deg:'4', rom:'IV7', bass:m('D',3), pad:[m('D',4),m('F#',4),m('A',4),m('C',5)]},
+    {name:'D7', deg:'4', rom:'IV7', bass:m('D',3), pad:[m('D',4),m('F#',4),m('A',4),m('C',5)]},
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'E7', deg:'5', rom:'V7',  bass:m('E',2), pad:[m('E',3),m('G#',3),m('B',3),m('D',4)]},
+    {name:'D7', deg:'4', rom:'IV7', bass:m('D',3), pad:[m('D',4),m('F#',4),m('A',4),m('C',5)]},
+    {name:'A7', deg:'1', rom:'I7',  bass:m('A',2), pad:[m('A',3),m('C#',4),m('E',4),m('G',4)]},
+    {name:'E7', deg:'5', rom:'V7',  bass:m('E',2), pad:[m('E',3),m('G#',3),m('B',3),m('D',4)]}
+  ],
+  null // 2 = 只有鼓
+];
+
+/* ---------- 噪声缓冲（鼓用） ---------- */
+let noiseBuf = null;
+function getNoise(){
+  const c = ac();
+  if(!noiseBuf){
+    const len = Math.floor(c.sampleRate * 0.5);
+    noiseBuf = c.createBuffer(1, len, c.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+
+/* ---------- 音色 ---------- */
+
+// 底鼓：低频正弦下滑 + 极短高频"鼓槌打点"（手机外放才听得见）
+function kick(t, out){
+  const c = ac();
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(140, t);
+  o.frequency.exponentialRampToValueAtTime(62, t + 0.05);
+  o.frequency.exponentialRampToValueAtTime(48, t + 0.30);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.95, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + 0.32);
+
+  // 打点：让外放也有"手感"
+  const n = c.createBufferSource(); n.buffer = getNoise();
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.8;
+  const ng = c.createGain();
+  ng.gain.setValueAtTime(0.30, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.022);
+  n.connect(hp); hp.connect(bp); bp.connect(ng); ng.connect(out);
+  n.start(t); n.stop(t + 0.03);
+}
+
+// 军鼓
+function snare(t, out){
+  const c = ac();
+  const n = c.createBufferSource(); n.buffer = getNoise();
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 700;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 0.7;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.55, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.20);
+  n.connect(hp); hp.connect(bp); bp.connect(g); g.connect(out);
+  n.start(t); n.stop(t + 0.22);
+
+  const o = c.createOscillator(), og = c.createGain();
+  o.type = 'triangle';
+  o.frequency.setValueAtTime(200, t);
+  o.frequency.exponentialRampToValueAtTime(160, t + 0.08);
+  og.gain.setValueAtTime(0.28, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
+  o.connect(og); og.connect(out);
+  o.start(t); o.stop(t + 0.11);
+}
+
+// 踩镲
+function hat(t, out, lvl){
+  const c = ac();
+  const n = c.createBufferSource(); n.buffer = getNoise();
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 8000;
+  const g = c.createGain();
+  g.gain.setValueAtTime(lvl, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+  n.connect(hp); hp.connect(g); g.connect(out);
+  n.start(t); n.stop(t + 0.06);
+}
+
+// 贝斯
+function bassNote(t, midi, dur, out){
+  const c = ac();
+  const o = c.createOscillator(), g = c.createGain();
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 420;
+  o.type = 'triangle';
+  o.frequency.value = hz(midi);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.42, t + 0.008);
+  g.gain.setValueAtTime(0.38, t + dur * 0.55);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(lp); lp.connect(g); g.connect(out);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+
+// 和声铺底（pad）
+function padChord(t, midis, dur, out){
+  const c = ac();
+  const g = c.createGain();
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 2000; lp.Q.value = 0.6;
+
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.09, t + 0.05);
+  g.gain.setValueAtTime(0.078, t + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.25);
+
+  midis.forEach(function(md, i){
+    const o = c.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = hz(md);
+    o.detune.value = (i % 2 === 0 ? -4 : 4);   // 轻微失谐，更宽
+    o.connect(lp);
+    o.start(t); o.stop(t + dur + 0.3);
+  });
+  lp.connect(g); g.connect(out);
+}
+
+/* ---------- 伴奏引擎（音频时钟调度） ---------- */
+const TRK = {
+  on:false, bpm:80, nextTime:0, step:0, timer:null,
+  drum:true, bass:true, pad:true, prog:0, vol:0.65, gain:null
+};
+
+function trackOut(){
+  const c = ac();
+  if(!TRK.gain){
+    TRK.gain = c.createGain();
+    TRK.gain.gain.value = TRK.vol;
+    TRK.gain.connect(c.master);
+  }
+  return TRK.gain;
+}
+
+function scheduleStep(step, time){
+  const prog = PROGS[TRK.prog];
+  const stepDur = 60 / TRK.bpm / 2;      // 8 分音符
+  const bar = Math.floor(step / 8);
+  const s8  = step % 8;
+  const out = trackOut();
+  const nBars = prog ? prog.length : 1;
+  const ch = prog ? prog[bar % nBars] : null;
+
+  /* --- 和声 & 贝斯：每小节第 1 拍 --- */
+  if(s8 === 0 && ch){
+    if(TRK.pad)  padChord(time, ch.pad, stepDur * 8, out);
+    if(TRK.bass) bassNote(time, ch.bass, stepDur * 3, out);
+    // UI：大字显示当前级数 + 小字罗马数字与和弦名
+    setTimeout(function(){
+      if(!TRK.on) return;
+      const d = document.getElementById('cnDeg'), s = document.getElementById('cnSub');
+      if(d) d.textContent = ch.deg + ' 级';
+      if(s) s.textContent = ch.rom + '　' + ch.name;
+    }, Math.max(0, (time - ac().currentTime) * 1000));
+  }
+  /* --- 贝斯：第 3 拍再来一次 --- */
+  if(s8 === 4 && ch && TRK.bass){
+    bassNote(time, ch.bass, stepDur * 2.5, out);
+  }
+
+  /* --- 鼓 --- */
+  if(TRK.drum){
+    if(s8 === 0 || s8 === 3 || s8 === 4) kick(time, out);
+    if(s8 === 2 || s8 === 6) snare(time, out);
+    hat(time, out, s8 % 2 === 0 ? 0.16 : 0.09);
+  }
+}
+
+function scheduler(){
+  const c = ac();
+  const stepDur = 60 / TRK.bpm / 2;
+  while(TRK.nextTime < c.currentTime + 0.25){
+    scheduleStep(TRK.step, TRK.nextTime);
+    TRK.step++;
+    TRK.nextTime += stepDur;
+  }
+}
+
+function startTrack(){
+  const c = ac();
+  TRK.on = true;
+  TRK.step = 0;
+  TRK.nextTime = c.currentTime + 0.08;
+  trackOut().gain.value = TRK.vol;
+  if(TRK.timer) clearInterval(TRK.timer);
+  TRK.timer = setInterval(scheduler, 50);
+  scheduler();
+  const b = document.getElementById('btnTrack');
+  b.textContent = '■ 停止伴奏'; b.classList.add('on');
+}
+function stopTrack(){
+  TRK.on = false;
+  if(TRK.timer){ clearInterval(TRK.timer); TRK.timer = null; }
+  const b = document.getElementById('btnTrack');
+  b.textContent = '▶ 播放伴奏'; b.classList.remove('on');
+  const d = document.getElementById('cnDeg'), s = document.getElementById('cnSub');
+  if(d) d.textContent = '—';
+  if(s) s.textContent = '';
+}
+
+/* ==========================================================
+   20 分钟流程
+   ========================================================== */
+const PHASES = [
+  {name:'动机变奏', dur:5*60,
+   tip:'<b>不跟伴奏</b>，慢速弹。拿一个 4 音的动机，然后：<br>' +
+       '① 原样重复 ② 只改结尾 ③ 换到另一根弦/另一个把位 ④ 改节奏 ⑤ 倒过来弹<br>' +
+       '目的：让你习惯「用脑子造句子」，而不是手指自动跑。'},
+  {name:'3 音挑战 / 落点', dur:5*60,
+   tip:'<b>打开伴奏</b>。<br>' +
+       '· 只准用 3 个音（比如 Am 五声的 A、C、E），只在一根弦上<br>' +
+       '· 或：每一句的最后一下，必须落在当前和弦的 <b>1、3、5</b><br>' +
+       '目的：把注意力从「找音」转到「造句」。'},
+  {name:'自由即兴（录音）', dur:7*60,
+   tip:'<b>按下面的「开始录音」</b>，然后一直弹到本段结束。<br>' +
+       '记住三件事：<br>' +
+       '① <b>留白</b>——每句之后停 1 小节，让伴奏说话<br>' +
+       '② <b>问答</b>——问一句、答一句，别一口气不停<br>' +
+       '③ <b>别跑音阶</b>——宁可 3 个音，不要 30 个音'},
+  {name:'回听自评', dur:3*60,
+   tip:'<b>停止录音，回放。</b>边听边找：<br>' +
+       '· 哪一段在「跑音阶」？（连续 8 个音以上同节奏）<br>' +
+       '· 有没有留白？<br>' +
+       '· 有没有一句是你想记住的？把它写下来，明天接着用。'}
+];
+
+const T = { idx:0, left:PHASES[0].dur, running:false, raf:null, last:0 };
+
+function fmt(s){
+  s = Math.max(0, Math.ceil(s));
+  const m = Math.floor(s / 60), r = s % 60;
+  return m + ':' + (r < 10 ? '0' : '') + r;
+}
+function totalLeft(){
+  let t = T.left;
+  for(let i = T.idx + 1; i < PHASES.length; i++) t += PHASES[i].dur;
+  return t;
+}
+function renderPhase(){
+  const p = PHASES[T.idx];
+  document.getElementById('pTag').textContent = '第 ' + (T.idx + 1) + ' / ' + PHASES.length + ' 段';
+  document.getElementById('pName').textContent = p.name;
+  document.getElementById('pLeft').textContent = '本段剩余 ' + fmt(T.left);
+  document.getElementById('tipPhase').textContent = '第 ' + (T.idx + 1) + ' 段';
+  document.getElementById('tipBox').innerHTML = p.tip;
+
+  const steps = document.getElementById('steps');
+  steps.innerHTML = '';
+  PHASES.forEach(function(_, i){
+    const el = document.createElement('i');
+    if(i < T.idx) el.className = 'done';
+    if(i === T.idx) el.className = 'on';
+    steps.appendChild(el);
+  });
+
+  const total = PHASES.reduce(function(a, b){ return a + b.dur; }, 0);
+  const doneQty = total - totalLeft();
+  const pct = Math.min(1, doneQty / total);
+  const C = 339.29;
+  const bar = document.getElementById('ringBar');
+  bar.style.strokeDashoffset = String(C * (1 - pct));
+  bar.style.stroke = ['#2563eb', '#109669', '#ea820f', '#7e3ac8'][T.idx];
+
+  document.getElementById('tBig').textContent = fmt(totalLeft());
+}
+
+function tick(now){
+  if(!T.running) return;
+  if(!T.last) T.last = now;
+  const dt = (now - T.last) / 1000;
+  T.last = now;
+  T.left -= dt;
+
+  if(T.left <= 0){
+    if(T.idx < PHASES.length - 1){
+      T.idx++;
+      T.left = PHASES[T.idx].dur;
+      beep(880);
+      onPhaseEnter(T.idx);
+    }else{
+      T.left = 0; T.running = false;
+      beep(660); setTimeout(function(){ beep(880); }, 180);
+      onPhaseEnter(-1);
+    }
+    renderPhase();
+  }else{
+    document.getElementById('pLeft').textContent = '本段剩余 ' + fmt(T.left);
+    document.getElementById('tBig').textContent = fmt(totalLeft());
+    const total = PHASES.reduce(function(a, b){ return a + b.dur; }, 0);
+    const pct = Math.min(1, (total - totalLeft()) / total);
+    document.getElementById('ringBar').style.strokeDashoffset = String(339.29 * (1 - pct));
+  }
+  T.raf = requestAnimationFrame(tick);
+}
+
+function onPhaseEnter(i){
+  // 第 2、3 段自动开伴奏（第 1 段是干弹动机，不需要）
+  if(i === 1 || i === 2){ if(!TRK.on) startTrack(); }
+
+  // 第 3 段（自由即兴）：提示按录音
+  if(i === 2){
+    const w = document.getElementById('recWarn');
+    w.hidden = false;
+    w.textContent = '这一段请点「开始录音」，弹完在下面回放——自己听才听得出问题。';
+  }
+
+  // 第 4 段（回听自评）：停伴奏、停录音
+  if(i === 3){
+    if(TRK.on) stopTrack();
+    if(REC.active) stopRec();
+    const w = document.getElementById('recWarn');
+    w.hidden = false;
+    w.textContent = '回放上面的录音，边听边找：① 哪一段在跑音阶 ② 有没有留白 ③ 哪一句想记住。';
+  }
+}
+
+// 阶段提示音
+function beep(f){
+  try{
+    const c = ac();
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0, c.currentTime);
+    g.gain.linearRampToValueAtTime(0.22, c.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+    o.connect(g); g.connect(c.master);
+    o.start(); o.stop(c.currentTime + 0.36);
+  }catch(e){}
+}
+
+/* ==========================================================
+   录音
+   ========================================================== */
+const REC = { stream:null, mr:null, chunks:[], list:[], active:false };
+
+function pickMime(){
+  if(!window.MediaRecorder) return '';
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg'];
+  for(let i=0;i<types.length;i++){
+    try{ if(MediaRecorder.isTypeSupported(types[i])) return types[i]; }catch(e){}
+  }
+  return '';
+}
+
+function startRec(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showRecWarn('当前浏览器不支持麦克风录音（请用 https 网址打开，例如 GitHub Pages）');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({
+    audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:true }
+  }).then(function(stream){
+    REC.stream = stream;
+    const mime = pickMime();
+    REC.mr = mime ? new MediaRecorder(stream, {mimeType:mime}) : new MediaRecorder(stream);
+    REC.chunks = [];
+    REC.mr.ondataavailable = function(e){ if(e.data && e.data.size) REC.chunks.push(e.data); };
+    REC.mr.onstop = function(){
+      const blob = new Blob(REC.chunks, {type: REC.mr.mimeType || 'audio/webm'});
+      const url = URL.createObjectURL(blob);
+      const d = new Date();
+      addRecItem(url, d.getHours() + ':' + (d.getMinutes()<10?'0':'') + d.getMinutes(), blob.size);
+      if(REC.stream){ REC.stream.getTracks().forEach(function(t){ t.stop(); }); REC.stream = null; }
+      REC.active = false;
+      const b = document.getElementById('btnRec');
+      b.textContent = '● 开始录音';
+      b.style.background = '';
+      b.classList.add('primary');
+    };
+    REC.mr.start();
+    REC.active = true;
+    const b = document.getElementById('btnRec');
+    b.textContent = '■ 停止录音（录制中…）';
+    b.style.background = '#d64545';
+    document.getElementById('recWarn').hidden = true;
+  }).catch(function(e){
+    showRecWarn('麦克风开不了：' + (e && e.name === 'NotAllowedError'
+      ? '权限被拒绝，请在浏览器设置里允许麦克风' : (e && e.message ? e.message : e)));
+  });
+}
+function stopRec(){
+  if(REC.mr && REC.active){ try{ REC.mr.stop(); }catch(e){} }
+}
+function showRecWarn(t){
+  const el = document.getElementById('recWarn');
+  el.hidden = false; el.textContent = t;
+}
+function addRecItem(url, label, size){
+  const list = document.getElementById('recList');
+  const empty = list.querySelector('.empty');
+  if(empty) empty.remove();
+
+  const row = document.createElement('div');
+  row.className = 'rec-item';
+
+  const t = document.createElement('div');
+  t.className = 't'; t.textContent = label;
+
+  const au = document.createElement('audio');
+  au.controls = true; au.src = url; au.preload = 'metadata';
+  au.addEventListener('play', function(){
+    // 回放时自动静音伴奏，避免重叠
+    if(TRK.on) stopTrack();
+  });
+
+  const x = document.createElement('button');
+  x.className = 'x'; x.textContent = '×';
+  x.addEventListener('click', function(){
+    au.pause(); URL.revokeObjectURL(url); row.remove();
+    if(!list.querySelector('.rec-item')){
+      const e2 = document.createElement('div');
+      e2.className = 'empty'; e2.textContent = '还没有录音';
+      list.appendChild(e2);
+    }
+  });
+
+  row.appendChild(t); row.appendChild(au); row.appendChild(x);
+  list.insertBefore(row, list.firstChild);
+}
+
+/* ==========================================================
+   UI 绑定
+   ========================================================== */
+
+/* 显示当前进行的级数序列（本调主音 = 1） */
+function renderProgDeg(){
+  const el = document.getElementById('progDeg');
+  if(!el) return;
+  const p = PROGS[TRK.prog];
+  if(!p){ el.innerHTML = '<i>只有鼓，没有和声 —— 自己找感觉</i>'; return; }
+  const ds = [];
+  p.forEach(function(c){ if(ds.indexOf(c.deg) < 0) ds.push(c.deg); });
+  el.innerHTML = '级数：<em>' + ds.join(' – ') + '</em>';
+}
+document.getElementById('btnRun').addEventListener('click', function(){
+  const b = this;
+  if(T.running){
+    T.running = false; b.textContent = '▶ 继续'; b.classList.remove('on');
+    if(T.raf){ cancelAnimationFrame(T.raf); T.raf = null; }
+  }else{
+    ac();  // 必须在用户手势里初始化
+    T.running = true; T.last = 0;
+    b.textContent = '⏸ 暂停'; b.classList.add('on');
+    if(T.idx === 1 || T.idx === 2){ if(!TRK.on) startTrack(); }
+    T.raf = requestAnimationFrame(tick);
+  }
+});
+
+document.getElementById('btnSkip').addEventListener('click', function(){
+  if(T.idx < PHASES.length - 1){
+    T.idx++; T.left = PHASES[T.idx].dur;
+    onPhaseEnter(T.idx);
+  }else{
+    T.left = 0; T.running = false;
+  }
+  renderPhase();
+});
+
+document.getElementById('btnReset').addEventListener('click', function(){
+  T.running = false; T.idx = 0; T.left = PHASES[0].dur; T.last = 0;
+  if(T.raf){ cancelAnimationFrame(T.raf); T.raf = null; }
+  const b = document.getElementById('btnRun');
+  b.textContent = '▶ 开始'; b.classList.remove('on');
+  stopTrack();
+  renderPhase();
+});
+
+document.getElementById('btnTrack').addEventListener('click', function(){
+  ac();
+  TRK.on ? stopTrack() : startTrack();
+});
+
+document.getElementById('prog').addEventListener('change', function(){
+  TRK.prog = parseInt(this.value, 10);
+  TRK.step = 0;
+  renderProgDeg();
+});
+document.getElementById('bpm').addEventListener('input', function(){
+  TRK.bpm = parseInt(this.value, 10);
+  document.getElementById('bpmV').textContent = this.value;
+});
+document.getElementById('vol').addEventListener('input', function(){
+  TRK.vol = parseInt(this.value, 10) / 100;
+  document.getElementById('volV').textContent = this.value + '%';
+  if(TRK.gain) TRK.gain.gain.value = TRK.vol;
+});
+
+['swDrum','swBass','swPad'].forEach(function(id){
+  document.getElementById(id).addEventListener('click', function(){
+    this.classList.toggle('on');
+    const on = this.classList.contains('on');
+    if(id === 'swDrum') TRK.drum = on;
+    if(id === 'swBass') TRK.bass = on;
+    if(id === 'swPad')  TRK.pad  = on;
+  });
+});
+
+document.getElementById('btnRec').addEventListener('click', function(){
+  ac();
+  if(REC.active) stopRec(); else startRec();
+});
+
+// 离开页面时收尾
+window.addEventListener('beforeunload', function(){
+  if(TRK.on) stopTrack();
+  if(REC.active) stopRec();
+});
+
+// 初始化
+renderPhase();
+renderProgDeg();
+</script>
+</body>
+</html>
