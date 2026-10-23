@@ -95,7 +95,74 @@
   .brand-txt p{margin-top:4px}
 
   /* ---- 指板音名 ---- */
-  .fb-wrap{width:100%}
+  .fb-wrap{width:100%;position:relative}
+  .fb-bar{display:flex;gap:8px;justify-content:flex-end;margin:6px 0 4px;flex-wrap:wrap}
+  .fb-bar button{font:inherit;font-size:13px;font-weight:700;padding:7px 12px;border-radius:9px;
+    border:1px solid var(--line);background:#f7f9fd;color:#3b4a66;cursor:pointer}
+  .fb-bar button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+  .fb-bar button:active{transform:scale(.97)}
+  /* 放大：指板变宽，横向可滑动，其他控件不受影响 */
+  .fb-wrap.zoom{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    background:#fafbfe;border:1px solid var(--line);border-radius:10px;padding:6px 0}
+  .fb-wrap.zoom .neckbox{width:185%}
+  .fb-wrap.zoom .necksvg{width:100%}
+  /* 横屏：整张卡片旋转 90°（按钮、文字一起转） */
+  #fbCard.land-card{
+    position:fixed; top:50%; left:50%;
+    width:100vh; height:100vw;
+    margin-left:-50vh; margin-top:-50vw;
+    transform:rotate(90deg); transform-origin:center center;
+    z-index:9998; background:#fff; border-radius:0; border:none;
+    box-shadow:none; padding:10px 8px; box-sizing:border-box;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; margin-bottom:0;
+  }
+  html.land-mode, body.land-mode{overflow:hidden}
+  .card.land-card .fb-wrap{overflow:visible; width:100%}
+  .card.land-card .neckbox{overflow:visible}
+  .card.land-card .fb-wrap{width:100%; padding:0}
+  .card.land-card .neckbox{width:100%}
+  /* 指板放大到约 88% 屏宽（对齐红框），保持原比例 */
+  .card.land-card .necksvg{width:100%; height:auto; display:block; margin:0 auto}
+  /* 横屏里把竖向间距压到最小，给指板腾空间 */
+  .card.land-card h2{font-size:13px; margin:0 0 4px}
+  .card.land-card .seg{margin-bottom:4px}
+  .card.land-card .seg button{padding:5px 10px; font-size:12px; border-radius:8px}
+  .card.land-card .switchrow{margin-top:4px!important; gap:6px}
+  .card.land-card .switchrow label{font-size:11px}
+  .card.land-card .switchrow select{padding:3px 6px; font-size:12px}
+  .card.land-card .qbar{margin:4px 0; padding:6px 10px; font-size:13px}
+  .card.land-card .fb-bar{margin:4px 0; gap:6px}
+  .card.land-card .fb-bar button{padding:5px 10px; font-size:12px}
+  .card.land-card .result{margin-top:4px!important; font-size:13px; min-height:0}
+  .card.land-card .btnrow{margin-top:4px; gap:8px}
+  .card.land-card .btnrow button{padding:6px 16px; font-size:13px}
+  .card.land-card .hint{display:none}
+  /* 手机真正横过来时（视口宽 > 高）：指板铺满，控件收紧 */
+  @media (orientation: landscape){
+    #fbCard{padding:10px 8px; max-width:100%}
+    #fbCard .necksvg{width:100%}
+    #fbCard h2{margin:0 0 6px}
+    #fbCard .qbar{margin:6px 0; padding:6px 10px}
+    #fbCard .fb-wrap{padding:0}
+    #fbCard .hint{display:none}
+  }
+  /* 出题按钮脱离卡片，浮在屏幕右下角 */
+  #fbNext.land-float{
+    position:fixed!important; right:16px; bottom:16px; left:auto; top:auto;
+    z-index:99999; margin:0; padding:12px 24px; font-size:15px;
+    border-radius:26px; box-shadow:0 6px 18px rgba(37,99,235,.4);
+  }
+  #fbNext.land-float[hidden]{display:none!important}
+  .card.land-card .notebtns{gap:6px}
+  .card.land-card .notebtn{padding:8px 0; font-size:15px}
+  /* 选答案上提：贴紧结果栏 */
+  .card.land-card #fbAnsCard{
+    margin-top:-4px; padding-top:6px; margin-bottom:-14px;
+    transform:translateY(-20px);
+  }
+  .card.land-card #fbAnsCard > div:first-child{
+    margin-bottom:5px; font-size:12px;
+  }
   .fb{display:grid;gap:3px;min-width:330px}
   .fb .fh{font-size:11px;color:var(--grey);text-align:center;font-weight:600;line-height:26px}
   .fb .slabel{font-size:11.5px;color:#5b6478;font-weight:700;display:flex;align-items:center;justify-content:center;white-space:nowrap}
@@ -244,7 +311,7 @@
   </section>
 
   <section id="fret" hidden>
-    <div class="card">
+    <div class="card" id="fbCard">
       <h2>🎸 指板找音 <span class="tag beg">初级班</span></h2>
       <div class="seg" id="fbMode">
         <button data-mode="learn" class="on">学习模式</button>
@@ -264,17 +331,20 @@
         </label>
       </div>
       <div class="qbar" id="fbQ">学习模式：点指板上任意位置，会显示并弹出它的音名</div>
-      <div class="fb-wrap"><div class="neckbox" id="neckBox"></div></div>
+      <div class="fb-bar">
+        <button id="fbZoomBtn" type="button">🔍 放大</button>
+        <button id="fbLandBtn" type="button">⟳ 横屏</button>
+      </div>
+      <div class="fb-wrap" id="fbWrap"><div class="neckbox" id="neckBox"></div></div>
       <div class="result" id="fbResult" style="text-align:center;margin-top:10px"></div>
+      <div id="fbAnsCard" hidden style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:8px">选答案</div>
+        <div class="notebtns" id="fbNotes"></div>
+      </div>
       <div class="btnrow" style="justify-content:center">
         <button class="primary" id="fbNext" hidden>▶ 出题</button>
       </div>
       <div class="hint">竖线 = 品丝，横线 = 琴弦（<b>上 1 弦 → 下 6 弦</b>，越往下越粗），小白点 = 品位记号；最左边一列是空弦（0 品）。</div>
-    </div>
-
-    <div class="card" id="fbAnsCard" hidden>
-      <h2>选答案</h2>
-      <div class="notebtns" id="fbNotes"></div>
     </div>
 
     <div class="card">
@@ -849,6 +919,73 @@ buildKeys();
 renderSlots();
 updateStats();
 
+/* ---- 指板：放大 / 横屏 两种模式（互斥，不影响其他控件） ---- */
+(function(){
+  var wrap = document.getElementById('fbWrap');
+  var bZoom = document.getElementById('fbZoomBtn');
+  var bLand = document.getElementById('fbLandBtn');
+  if(!wrap || !bZoom || !bLand) return;
+
+  function reset(){
+    wrap.classList.remove('zoom', 'land');
+    wrap.scrollLeft = 0;
+    var c = document.getElementById('fbCard');
+    if(c) c.classList.remove('land-card');
+    document.body.classList.remove('land-mode');
+    document.documentElement.classList.remove('land-mode');
+    var nb = document.getElementById('fbNext');
+    if(nb && nb.classList.contains('land-float')){
+      nb.classList.remove('land-float');
+      if(nb._home) nb._home.appendChild(nb);
+    }
+    bZoom.classList.remove('on'); bZoom.textContent = '🔍 放大';
+    bLand.classList.remove('on'); bLand.textContent = '⟳ 横屏';
+  }
+  bZoom.addEventListener('click', function(){
+    var was = wrap.classList.contains('zoom');
+    reset();
+    if(!was){
+      wrap.classList.add('zoom');
+      bZoom.classList.add('on'); bZoom.textContent = '↺ 还原';
+    }
+  });
+  var card = document.getElementById('fbCard');
+  var nextBtn = document.getElementById('fbNext');
+  function floatNext(on){
+    if(!nextBtn) return;
+    if(on){
+      if(!nextBtn._home) nextBtn._home = nextBtn.parentNode;
+      nextBtn.classList.add('land-float');
+      document.body.appendChild(nextBtn);
+    } else {
+      nextBtn.classList.remove('land-float');
+      if(nextBtn._home) nextBtn._home.appendChild(nextBtn);
+    }
+  }
+
+  bLand.addEventListener('click', function(){
+    var was = card && card.classList.contains('land-card');
+    reset();
+    if(!was && card){
+      card.classList.add('land-card');
+      document.body.classList.add('land-mode');
+      document.documentElement.classList.add('land-mode');
+
+      floatNext(true);
+      bLand.classList.add('on'); bLand.textContent = '⟲ 竖屏';
+    } else {
+      if(card){
+        card.classList.remove('land-card');
+        card.style.width = ''; card.style.height = '';
+        card.style.marginLeft = ''; card.style.marginTop = '';
+      }
+      document.body.classList.remove('land-mode');
+      document.documentElement.classList.remove('land-mode');
+      floatNext(false);
+    }
+  });
+})();
+
 /* =========================================================
    指板找音（初级班）· 真实琴颈（纯属性渲染，不依赖 CSS）
    弦序：上 1 弦 → 下 6 弦；可选"只练某根弦"
@@ -867,11 +1004,15 @@ const TUNINGS = [
 const SLABEL = ['1弦','2弦','3弦','4弦','5弦','6弦'];
 const FMAX = 12;
 const ROWTOP = 20, ROWH = 22;
-const geo = {LABW:42, OPENW:24, NUTW:7, FW:30};
+const geo = {LABW:20, OPENW:18, NUTW:5};
+/* 真实品距：品丝位置按十二平均律 2^(-n/12)，第 12 品正好是弦长一半 */
+const FRET_POS = (function(){ const a=[0];
+  for(let n=1;n<=FMAX;n++) a.push(2*(1-Math.pow(2,-n/12))); return a; })();
+const TOTALW = 400;   /* 指板本体宽度（琴枕→12品丝），占整幅约 89% */
 const BOARD_Y = ROWTOP - 12;
 const BOARD_H = 5*ROWH + 24;
 const NUTX = geo.LABW + geo.OPENW;
-const NECKW = NUTX + geo.NUTW + FMAX*geo.FW + 12;
+const NECKW = NUTX + geo.NUTW + TOTALW + 6;
 const NECKH = BOARD_Y + BOARD_H + 25;
 const FONT = 'font-family="-apple-system,BlinkMacSystemFont,PingFang SC,Noto Sans CJK SC,Microsoft YaHei,sans-serif"';
 
@@ -882,8 +1023,8 @@ function fbPC(m){ return LETTERS[((m%12)+12)%12]; }
 function fbName(n){ return ENH[n] || n; }
 function fbLabel(m){ const n = fbPC(m); return fb.kind==='letter' ? fbName(n) : SOLF[n]; }
 function fbMidi(si,f){ return TUNINGS[fb.tune].m[si] + f; }
-function fbCellX(f){ return f===0 ? geo.LABW : NUTX + geo.NUTW + (f-1)*geo.FW; }
-function fbCellW(f){ return f===0 ? geo.OPENW : geo.FW; }
+function fbCellX(f){ return f===0 ? geo.LABW : NUTX + geo.NUTW + FRET_POS[f-1]*TOTALW; }
+function fbCellW(f){ return f===0 ? geo.OPENW : (FRET_POS[f]-FRET_POS[f-1])*TOTALW; }
 function fbCellC(f){ return fbCellX(f) + fbCellW(f)/2; }
 function fbRowC(i){ return ROWTOP + i*ROWH; }
 function fbFontSize(lbl){ return lbl.length <= 2 ? 11 : (lbl.length <= 3 ? 9.5 : 8); }
@@ -902,15 +1043,15 @@ function buildStringSelect(){
 
 function buildNeck(){
   const boardX = NUTX + geo.NUTW;
-  const rightX = boardX + FMAX*geo.FW;
+  const rightX = boardX + TOTALW;
   const cy = (fbRowC(2) + fbRowC(3)) / 2;
   let s = '<svg viewBox="0 0 '+NECKW+' '+NECKH+'" class="necksvg" preserveAspectRatio="xMidYMid meet">';
   s += '<defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">'+
        '<stop offset="0" stop-color="#f4ddb8"/><stop offset=".5" stop-color="#edcf9f"/><stop offset="1" stop-color="#dfbd88"/></linearGradient></defs>';
-  s += '<rect x="'+boardX+'" y="'+BOARD_Y+'" width="'+(FMAX*geo.FW)+'" height="'+BOARD_H+'" rx="7" fill="url(#wood)" stroke="#c9ab80"/>';
+  s += '<rect x="'+boardX+'" y="'+BOARD_Y+'" width="'+TOTALW+'" height="'+BOARD_H+'" rx="7" fill="url(#wood)" stroke="#c9ab80"/>';
   s += '<rect x="'+NUTX+'" y="'+BOARD_Y+'" width="'+geo.NUTW+'" height="'+BOARD_H+'" rx="2" fill="#f4efe3" stroke="#cfc7b6"/>';
   for(let f=1; f<=FMAX; f++){
-    const x = boardX + f*geo.FW;
+    const x = boardX + FRET_POS[f]*TOTALW;
     s += '<line x1="'+x+'" y1="'+BOARD_Y+'" x2="'+x+'" y2="'+(BOARD_Y+BOARD_H)+'" stroke="#c6cad0" stroke-width="'+(f===FMAX?2.6:1.6)+'"/>';
   }
   [3,5,7,9].forEach(function(f){ s += '<circle cx="'+fbCellC(f)+'" cy="'+cy+'" r="4.2" fill="#ffffff" stroke="#bfa072" stroke-width="1"/>'; });
@@ -920,10 +1061,10 @@ function buildNeck(){
     s += '<line x1="'+NUTX+'" y1="'+fbRowC(i)+'" x2="'+rightX+'" y2="'+fbRowC(i)+'" stroke="#71757c" stroke-width="'+w+'" stroke-linecap="round"/>';
   }
   for(let i=0;i<6;i++)
-    s += '<text class="slb" data-s="'+i+'" x="'+(geo.LABW-5)+'" y="'+fbRowC(i)+'" dy="4" text-anchor="end" font-size="11" font-weight="600" fill="#5b6478" '+FONT+'>'+SLABEL[i]+'</text>';
+    s += '<text class="slb" data-s="'+i+'" x="'+(geo.LABW-1)+'" y="'+fbRowC(i)+'" dy="3" text-anchor="end" font-size="8.5" font-weight="600" fill="#5b6478" '+FONT+'>'+SLABEL[i]+'</text>';
   for(let f=1; f<=FMAX; f++)
     s += '<text x="'+fbCellC(f)+'" y="'+(BOARD_Y+BOARD_H+15)+'" text-anchor="middle" font-size="10.5" fill="#8a929f" '+FONT+'>'+f+'</text>';
-  s += '<text x="'+fbCellC(0)+'" y="'+(BOARD_Y+BOARD_H+15)+'" text-anchor="middle" font-size="10.5" fill="#8a929f" '+FONT+'>0</text>';
+  s += '<text x="'+fbCellC(0)+'" y="'+(BOARD_Y+BOARD_H+15)+'" text-anchor="middle" font-size="9.5" fill="#8a929f" '+FONT+'>0</text>';
   for(let i=0;i<6;i++){
     for(let f=0; f<=FMAX; f++){
       const lbl = fbLabel(fbMidi(i,f));
